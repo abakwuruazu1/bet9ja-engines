@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bet9ja Engines</title>
+<style>
+  :root{--bg:#0b1118;--panel:#121c27;--line:#1f2e3d;--text:#e6eef6;--mute:#8aa0b4;--acc:#3ddc97;--amb:#f5b942}
+  *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--text);font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+  main{max-width:880px;margin:0 auto;padding:28px 16px 60px}
+  h1{font-size:26px;margin:0 0 4px} p.sub{color:var(--mute);margin:0 0 24px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
+  a.card{display:block;text-decoration:none;color:inherit;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px;transition:border-color .15s,transform .15s}
+  a.card:hover{border-color:var(--acc);transform:translateY(-2px)}
+  .ic{width:44px;height:44px;border-radius:10px;display:grid;place-items:center;font-weight:800;font-size:20px;margin-bottom:10px}
+  .card b{font-size:18px;display:block} .card span{color:var(--mute);font-size:14px}
+  .st{margin-top:10px;font-size:13px;color:var(--mute)} .ok{color:var(--acc)} .bad{color:#ff7a7a}
+  .note{margin-top:24px;background:var(--panel);border-left:3px solid var(--amb);border-radius:8px;padding:12px 14px;color:var(--mute);font-size:14px}
+</style>
+</head>
+<body>
+<main>
+  <h1>Bet9ja Engines</h1>
+  <p class="sub">Stats, predictions and slip builder, recorded 24/7 in the cloud.</p>
+  <div class="grid">
+    <a class="card" href="leagueplus/dashboard.html"><div class="ic" style="background:#f5b942;color:#141004">L+</div><b>League Plus</b><span>Premier · Championship · Liga · Serie A · Sonic</span><div class="st" id="st-leagueplus">…</div></a>
+    <a class="card" href="zoom/dashboard.html"><div class="ic" style="background:#3ddc97;color:#04120a">⚽</div><b>Zoom Football</b><span>All Zoom leagues, pre-match engines</span><div class="st" id="st-zoom">…</div></a>
+    <a class="card" href="zoom/tennis.html"><div class="ic" style="background:#7aa7ff;color:#05101f">🎾</div><b>Zoom Tennis</b><span>All Zoom tennis tournaments</span><div class="st" id="st-tennis">…</div></a>
+  </div>
+  <div class="note">Your browser downloads the recorded data the first time you open an engine (a few MB), then only what's new. Live in-play is only in the Chrome extension. No engine can guarantee wins — bet responsibly.</div>
+</main>
+<script>
+(async () => {
+  const io = location.hostname.endsWith('.github.io');
+  const OWNER = io ? location.hostname.split('.')[0] : 'abakwuruazu1', REPO = io ? location.pathname.split('/')[1] : 'bet9ja-engines';
+  let ref = 'data';
+  try { const r = await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/commits/data`, { headers: { Accept: 'application/vnd.github.sha' } }); if (r.ok) ref = (await r.text()).trim(); } catch (e) {}
+  let mf = null; try { mf = await (await fetch(`https://raw.githubusercontent.com/${OWNER}/${REPO}/${ref}/manifest.json`)).json(); } catch (e) {}
+  for (const e of ['leagueplus', 'zoom', 'tennis']) {
+    const el = document.getElementById('st-' + e);
+    const E = mf && mf.engines && mf.engines[e];
+    if (!E) { el.innerHTML = '<span class="bad">No data yet</span>'; continue; }
+    const s = Object.values(E.state || {})[0] || {}, n = E.chunks.filter(c => c.store === 'matches').reduce((a, c) => a + c.n, 0);
+    const mins = s.lastSync ? Math.round((Date.now() - s.lastSync) / 60000) : null;
+    el.innerHTML = `<span class="${mins != null && mins < 15 ? 'ok' : 'bad'}">●</span> ${n.toLocaleString()} matches · checked ${mins == null ? '–' : mins + ' min ago'}${s.log && s.log.length ? ' · <span class="bad">' + s.log.length + ' warning(s)</span>' : ''}`;
+  }
+})();
+</script>
+</body>
+</html>

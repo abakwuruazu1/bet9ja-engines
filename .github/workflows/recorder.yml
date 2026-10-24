@@ -1,0 +1,39 @@
+name: Recorder (24/7)
+
+on:
+  schedule:
+    - cron: "17 * * * *"      # every hour; a new run takes over when the previous one ends
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ["recorder/**", "docs/**/lib/**", "docs/zoom/tennis/lib/**", ".github/workflows/recorder.yml"]
+
+concurrency:
+  group: recorder
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  record:
+    runs-on: ubuntu-latest
+    timeout-minutes: 358
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install
+        run: cd recorder && npm ci --no-audit --no-fund
+      - name: Get recorded data
+        run: |
+          git config --global user.name "recorder-bot"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git ls-remote --exit-code --heads origin data >/dev/null; then
+            git clone --depth 1 --branch data "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" data
+          else
+            mkdir data && cd data && git init -q -b data && git remote add origin "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git"
+          fi
+      - name: Record
+        run: node recorder/run.js --minutes 340

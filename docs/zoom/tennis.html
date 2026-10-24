@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Zoom Tennis Engine</title>
+<link rel="stylesheet" href="dashboard.css">
+<style>
+  .logo.t{background:#e5d84a;color:#1b1a05}
+  .srv{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--warn);margin-right:6px;vertical-align:middle}
+  .setcell{display:inline-block;min-width:22px;text-align:center;color:var(--mute)}
+  .setcell.cur{color:var(--text);font-weight:800}
+  .pt{display:inline-block;min-width:30px;text-align:center;background:var(--panel2);border-radius:4px;padding:1px 4px;font-weight:800}
+  .gh td{padding:3px 6px;font-size:13px}
+  .brk{color:var(--bad);font-weight:800}
+  .navlink{color:var(--mute);text-decoration:none;margin-right:14px;font-weight:600}
+  .navlink:hover{color:var(--text)}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="brand"><span class="logo t">🎾</span><div><b>Zoom Tennis Stats &amp; Prediction Engine</b><small id="syncLine">Loading…</small></div></div>
+  <div class="actions"><a class="navlink" href="dashboard.html">⚽ Football engine</a><button id="btnSync" class="btn">⟳ Capture now</button></div>
+</header>
+<nav class="tabs" id="tabs">
+  <button data-tab="overview" class="on">Overview</button>
+  <button data-tab="live">⚡ Live in-play</button>
+  <button data-tab="stats">Stats</button>
+  <button data-tab="players">Players</button>
+  <button data-tab="results">Results</button>
+  <button data-tab="predict">🎯 Predictor</button>
+  <button data-tab="board">📋 Round board</button>
+  <button data-tab="slip">🧾 Slip builder</button>
+  <button data-tab="outright">🏆 Tournament winner</button>
+  <button data-tab="backtest">🧪 Backtest</button>
+  <button data-tab="settings">⚙ Settings</button>
+</nav>
+<main id="view"></main>
+<div id="modal" class="modal hidden"><div class="modal-card"><button class="x" id="modalX">✕</button><div id="modalBody"></div></div></div>
+<script src="../shim.js" data-engine="tennis" data-app="tennis.js"></script>
+<script type="lazy" data-src="lib/settings.js"></script>
+<script type="lazy" data-src="tennis/lib/tcore.js"></script>
+<script type="lazy" data-src="tennis/lib/tmarkov.js"></script>
+<script type="lazy" data-src="tennis/lib/tmodel.js"></script>
+<script type="lazy" data-src="tennis/lib/tmarkets.js"></script>
+<script type="lazy" data-src="tennis/lib/tbacktest.js"></script>
+<script type="lazy" data-src="lib/slip.js"></script>
+<script type="lazy" data-src="tennis.js"></script>
+<script type="lazy" data-src="tennis-slip.js"></script>
+</body>
+</html>

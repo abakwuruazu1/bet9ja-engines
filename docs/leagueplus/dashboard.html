@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>League Plus Engine</title>
+<link rel="stylesheet" href="dashboard.css">
+<style>
+  .logo.lp{background:#f5b942;color:#141004;font-size:18px}
+  .odd{display:inline-block;min-width:46px;text-align:center;padding:2px 4px;border-radius:5px;background:var(--panel2);font-weight:700}
+  .odd.val{background:var(--acc);color:#04120a}
+  .cd{font-variant-numeric:tabular-nums;font-weight:800}
+  .gm{color:var(--mute);font-size:12px}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="brand"><span class="logo lp">L+</span><div><b>League Plus Stats &amp; Prediction Engine</b><small id="syncLine">Loading…</small></div></div>
+  <div class="actions"><button id="btnSync" class="btn">⟳ Capture now</button></div>
+</header>
+<nav class="tabs" id="tabs">
+  <button data-tab="overview" class="on">Overview</button>
+  <button data-tab="next">⚡ Next round</button>
+  <button data-tab="slip">🧾 Slip builder</button>
+  <button data-tab="value">💰 Value finder</button>
+  <button data-tab="results">Results</button>
+  <button data-tab="tables">Tables &amp; teams</button>
+  <button data-tab="settings">⚙ Settings</button>
+</nav>
+<main id="view"></main>
+<div id="modal" class="modal hidden"><div class="modal-card"><button class="x" id="modalX">✕</button><div id="modalBody"></div></div></div>
+<script src="../shim.js" data-engine="leagueplus" data-app="dashboard.js"></script>
+<script type="lazy" data-src="lib/core.js"></script>
+<script type="lazy" data-src="lib/model.js"></script>
+<script type="lazy" data-src="lib/slip.js"></script>
+<script type="lazy" data-src="dashboard.js"></script>
+</body>
+</html>
