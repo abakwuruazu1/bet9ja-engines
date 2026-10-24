@@ -41,6 +41,7 @@
     const E = mf && mf.engines && mf.engines[e];
     if (!E) { el.innerHTML = '<span class="bad">No data yet</span>'; continue; }
     const s = Object.values(E.state || {})[0] || {}, n = E.chunks.filter(c => c.store === 'matches').reduce((a, c) => a + c.n, 0);
+    if (!n && s.log && s.log.length) { el.innerHTML = '<span class="bad">●</span> Bet9ja refuses cloud servers for this feed, so it can\'t be recorded online. Use the Chrome extension.'; continue; }
     const mins = s.lastSync ? Math.round((Date.now() - s.lastSync) / 60000) : null;
     el.innerHTML = `<span class="${mins != null && mins < 15 ? 'ok' : 'bad'}">●</span> ${n.toLocaleString()} matches · checked ${mins == null ? '–' : mins + ' min ago'}${s.log && s.log.length ? ' · <span class="bad">' + s.log.length + ' warning(s)</span>' : ''}`;
   }

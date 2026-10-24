@@ -132,12 +132,18 @@ function publish() {
   await restore();
   const st = await G('getSettings')();
   log('recorder start; will run', RUN_MIN, 'min');
-  let nextZoom = 0, nextPub = 0;
+  let nextZoom = 0, nextPub = 0, nextLp = 0, nextZf = 0;
   while (true) {
-    const r = await G('lpSync')(); if (r && r.log && r.log.length) log('League Plus:', r.log.join(' | ')); else if (r && r.added) log('League Plus +' + r.added);
+    // a feed that refuses this server (HTTP 403 etc.) is retried only every 30 min, so we never hammer it
+    if (Date.now() >= nextLp) {
+      const r = await G('lpSync')(); const bad = r && r.log && r.log.length && !r.added;
+      if (bad) { log('League Plus:', r.log.join(' | '), '- retry in 30 min'); nextLp = Date.now() + 30 * 60e3; } else if (r && r.added) log('League Plus +' + r.added);
+    }
     if (Date.now() >= nextZoom) {
+      if (Date.now() >= nextZf) {
+        try { const z = await G('runSync')({ deepLimit: 40 }); const bad = z.log && z.log.length && !z.total; log('Zoom football: total', z.total, '+' + z.added, (z.log || []).join(' | ')); if (bad) nextZf = Date.now() + 30 * 60e3; } catch (e) { log('Zoom football failed', e.message); nextZf = Date.now() + 30 * 60e3; }
+      }
       nextZoom = Date.now() + 3 * 60e3;
-      try { const z = await G('runSync')({ deepLimit: 40 }); log('Zoom football: total', z.total, '+' + z.added, (z.log || []).join(' | ')); } catch (e) { log('Zoom football failed', e.message); }
       try { const t = await G('runTennisSync')({ detailLimit: st.tDetailLimit }); log('Zoom tennis: total', t.total, '+' + t.added, (t.log || []).join(' | ')); } catch (e) { log('Zoom tennis failed', e.message); }
     }
     if (Date.now() >= nextPub || ONCE) {
