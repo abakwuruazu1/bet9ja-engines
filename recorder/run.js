@@ -131,19 +131,19 @@ function publish() {
 // Needs GITHUB_TOKEN (a token allowed to write this repo) and GITHUB_REPO (owner/name).
 const HOST = process.env.RECORDER_HOST || (process.env.GITHUB_ACTIONS ? 'github' : 'server');
 function ensureDataRepo() {
-  if (fs.existsSync(path.join(DATA, '.git')) || NO_GIT) return;
+  if (fs.existsSync(path.join(DATA, '.git')) || NO_GIT) return true;
   const tok = process.env.GITHUB_TOKEN, repo = process.env.GITHUB_REPO || 'abakwuruazu1/bet9ja-engines';
-  if (!tok) { log('GITHUB_TOKEN is not set – add it in Railway → Variables'); process.exit(1); }
+  if (!tok) { log('WAITING: GITHUB_TOKEN is not set yet. Add GITHUB_TOKEN and GITHUB_REPO in Railway → Variables, then Deploy.'); setInterval(() => log('still waiting for GITHUB_TOKEN…'), 300e3); return false; }
   const url = `https://x-access-token:${tok}@github.com/${repo}.git`, run = c => execSync(c, { stdio: 'pipe' });
   try { run(`git clone -q --depth 1 --branch data ${url} "${DATA}"`); }
   catch (e) { fs.mkdirSync(DATA, { recursive: true }); run(`git -C "${DATA}" init -q -b data`); run(`git -C "${DATA}" remote add origin ${url}`); }
   run(`git -C "${DATA}" config user.name "recorder-bot"`); run(`git -C "${DATA}" config user.email "recorder-bot@users.noreply.github.com"`);
-  log('data branch ready');
+  log('data branch ready'); return true;
 }
 
 // ---------------------------------------------------------------- main loop
 (async () => {
-  ensureDataRepo();
+  if (!ensureDataRepo()) return;   // waits quietly until the token is added
   await restore();
   if (HOST === 'github' && manifest.host && manifest.host !== 'github' && Date.now() - (manifest.at || 0) < 20 * 60e3) { log('a', manifest.host, 'recorder is running – GitHub recorder not needed'); process.exit(0); }
   const st = await G('getSettings')();
