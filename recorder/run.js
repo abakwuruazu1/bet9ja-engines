@@ -101,7 +101,7 @@ async function exportAll() {
     if (JSON.stringify(state) !== JSON.stringify(old.state)) changed = true;
     manifest.engines[eng] = { chunks: [...keep.values()].sort((a, b) => a.file.localeCompare(b.file)), state };
   }
-  if (changed) { manifest.at = Date.now(); fs.writeFileSync(mfPath(), JSON.stringify(manifest)); }
+  if (changed) { manifest.at = Date.now(); manifest.host = HOST; fs.writeFileSync(mfPath(), JSON.stringify(manifest)); }
   return changed;
 }
 
@@ -127,9 +127,25 @@ function publish() {
   } catch (e) { log('publish failed:', (e.stderr || e.message).toString().slice(0, 300)); try { sh('git pull -q --rebase -X theirs origin data'); } catch (e2) { } }
 }
 
+// ---------------------------------------------------------------- data branch checkout (Railway / any server)
+// Needs GITHUB_TOKEN (a token allowed to write this repo) and GITHUB_REPO (owner/name).
+const HOST = process.env.RECORDER_HOST || (process.env.GITHUB_ACTIONS ? 'github' : 'server');
+function ensureDataRepo() {
+  if (fs.existsSync(path.join(DATA, '.git')) || NO_GIT) return;
+  const tok = process.env.GITHUB_TOKEN, repo = process.env.GITHUB_REPO || 'abakwuruazu1/bet9ja-engines';
+  if (!tok) { log('GITHUB_TOKEN is not set – add it in Railway → Variables'); process.exit(1); }
+  const url = `https://x-access-token:${tok}@github.com/${repo}.git`, run = c => execSync(c, { stdio: 'pipe' });
+  try { run(`git clone -q --depth 1 --branch data ${url} "${DATA}"`); }
+  catch (e) { fs.mkdirSync(DATA, { recursive: true }); run(`git -C "${DATA}" init -q -b data`); run(`git -C "${DATA}" remote add origin ${url}`); }
+  run(`git -C "${DATA}" config user.name "recorder-bot"`); run(`git -C "${DATA}" config user.email "recorder-bot@users.noreply.github.com"`);
+  log('data branch ready');
+}
+
 // ---------------------------------------------------------------- main loop
 (async () => {
+  ensureDataRepo();
   await restore();
+  if (HOST === 'github' && manifest.host && manifest.host !== 'github' && Date.now() - (manifest.at || 0) < 20 * 60e3) { log('a', manifest.host, 'recorder is running – GitHub recorder not needed'); process.exit(0); }
   const st = await G('getSettings')();
   log('recorder start; will run', RUN_MIN, 'min');
   let nextZoom = 0, nextPub = 0, nextLp = 0, nextZf = 0;
