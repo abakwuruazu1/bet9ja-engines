@@ -486,7 +486,7 @@ async function saveSet() {
 }
 function download(name, text, type) { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([text], { type })); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000); }
 async function exportJSON() {
-  const data = { v: 1, at: Date.now(), matches: await ZDB.getAll('matches'), deep: await ZDB.getAll('deep'), standings: await ZDB.getAll('standings'), meta: await ZDB.getAll('meta'), live: await ZDB.getAll('live') };
+  const data = { engine: 'zoom', v: 1, at: Date.now(), matches: await ZDB.getAll('matches'), deep: await ZDB.getAll('deep'), standings: await ZDB.getAll('standings'), meta: await ZDB.getAll('meta'), live: await ZDB.getAll('live') };
   download(`zoom-backup-${new Date().toISOString().slice(0, 10)}.json`, JSON.stringify(data), 'application/json');
 }
 function exportCSV() {
@@ -498,9 +498,9 @@ function exportCSV() {
 async function importJSON(e) {
   const file = e.target.files[0]; if (!file) return;
   try {
-    const d = JSON.parse(await file.text());
+    const d = JSON.parse(await file.text()); if (d.engine && d.engine !== 'zoom') throw new Error('this file is a ' + d.engine + ' export, not zoom');
     await ZDB.putMany('matches', d.matches || []); await ZDB.putMany('deep', d.deep || []); await ZDB.putMany('standings', d.standings || []); await ZDB.putMany('meta', d.meta || []); await ZDB.putMany('live', d.live || []);
-    await load(); render(); alert(`Imported ${(d.matches || []).length} matches.`);
+    await load(); render(); alert(`Imported ${(d.matches || []).length.toLocaleString()} matches. Matches you already had are not duplicated.`);
   } catch (err) { alert('Import failed: ' + err.message); }
 }
 async function clearDB() {
@@ -516,3 +516,8 @@ async function clearDB() {
   render();
   setInterval(() => { if (St.tab === 'overview') updateSyncLine(); if (St.tab === 'live') liveTick(); }, 5000);
 })();
+
+// header Export / Import buttons
+document.getElementById('btnExp').addEventListener('click', async e => { const b = e.currentTarget; b.disabled = true; b.textContent = '⏳ Exporting…'; try { await exportJSON(); } finally { b.disabled = false; b.textContent = '⬇ Export'; } });
+document.getElementById('btnImp').addEventListener('click', () => document.getElementById('impTop').click());
+document.getElementById('impTop').addEventListener('change', async e => { const b = document.getElementById('btnImp'); b.disabled = true; b.textContent = '⏳ Importing…'; try { await importJSON(e); } finally { e.target.value = ''; b.disabled = false; b.textContent = '⬆ Import'; } });

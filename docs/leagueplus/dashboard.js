@@ -268,14 +268,19 @@ function rSettings() {
   $('#impFile').addEventListener('change', importJSON);
 }
 function download(name, text, type) { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([text], { type })); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000); }
-async function exportJSON() { download(`leagueplus-backup-${new Date().toISOString().slice(0, 10)}.json`, JSON.stringify({ v: 1, matches: await LPDB.getAll('matches'), meta: (await LPDB.getAll('meta')).filter(x => !x.key.startsWith('up:')) }), 'application/json'); }
+async function exportJSON() { download(`leagueplus-backup-${new Date().toISOString().slice(0, 10)}.json`, JSON.stringify({ engine: 'leagueplus', v: 1, matches: await LPDB.getAll('matches'), meta: (await LPDB.getAll('meta')).filter(x => !x.key.startsWith('up:')) }), 'application/json'); }
 function exportCSV() {
   const pick = [101, 102, 103, 104, 105, 106, 107, 108, 155, 156, 109, 110, 157, 158];
   const L = [['league', 'week', 'time', 'home', 'away', 'home_goals', 'away_goals', 'goal_minutes', ...pick.map(id => (St.cat[id] ? LPCat.mlabel(St.cat[id]) + ' ' + St.cat[id].name : id))].join(',')];
   St.matches.forEach(m => { const om = LPParse.oddsMap(m.odds, St.selsets[m.sk] || ''); L.push([cname(m.comp), m.week, new Date(m.ts).toISOString(), m.home, m.away, m.hg, m.ag, '"' + m.goals.map(([mn, s]) => mn + s).join(' ') + '"', ...pick.map(id => om.get(id) || '')].join(',')); });
   download(`leagueplus-matches-${new Date().toISOString().slice(0, 10)}.csv`, L.join('\n'), 'text/csv');
 }
-async function importJSON(e) { const f = e.target.files[0]; if (!f) return; try { const d = JSON.parse(await f.text()); await LPDB.putMany('matches', d.matches || []); await LPDB.putMany('meta', d.meta || []); await load(); render(); alert(`Imported ${(d.matches || []).length} matches.`); } catch (err) { alert('Import failed: ' + err.message); } }
+async function importJSON(e) { const f = e.target.files[0]; if (!f) return; try { const d = JSON.parse(await f.text()); if (d.engine && d.engine !== 'leagueplus') throw new Error('this file is a ' + d.engine + ' export, not leagueplus'); await LPDB.putMany('matches', d.matches || []); await LPDB.putMany('meta', d.meta || []); await load(); render(); alert(`Imported ${(d.matches || []).length.toLocaleString()} matches. Matches you already had are not duplicated.`); } catch (err) { alert('Import failed: ' + err.message); } }
 async function clearDB() { if (!confirm('Delete ALL recorded League Plus data from this browser?')) return; await LPDB.clear('matches'); await LPDB.clear('meta'); await load(); render(); }
 
 (async () => { await load(); render(); setInterval(() => { syncLine(); }, 15000); })();
+
+// header Export / Import buttons
+document.getElementById('btnExp').addEventListener('click', async e => { const b = e.currentTarget; b.disabled = true; b.textContent = '⏳ Exporting…'; try { await exportJSON(); } finally { b.disabled = false; b.textContent = '⬇ Export'; } });
+document.getElementById('btnImp').addEventListener('click', () => document.getElementById('impTop').click());
+document.getElementById('impTop').addEventListener('change', async e => { const b = document.getElementById('btnImp'); b.disabled = true; b.textContent = '⏳ Importing…'; try { await importJSON(e); } finally { e.target.value = ''; b.disabled = false; b.textContent = '⬆ Import'; } });

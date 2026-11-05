@@ -535,14 +535,19 @@ async function saveSet() {
   St.fitCache = {}; St.pairCache = new Map(); St.winCache = new Map(); St.bt = null; $('#setMsg').textContent = 'Saved ✓';
 }
 function download(name, text, type) { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([text], { type })); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000); }
-async function exportJSON() { download(`zoom-tennis-backup-${new Date().toISOString().slice(0, 10)}.json`, JSON.stringify({ v: 1, matches: await TDB.getAll('matches'), meta: await TDB.getAll('meta'), live: await TDB.getAll('live') }), 'application/json'); }
+async function exportJSON() { download(`zoom-tennis-backup-${new Date().toISOString().slice(0, 10)}.json`, JSON.stringify({ engine: 'tennis', v: 1, matches: await TDB.getAll('matches'), meta: await TDB.getAll('meta'), live: await TDB.getAll('live') }), 'application/json'); }
 function exportCSV() {
   const q = v => { const s = String(v ?? ''); return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
   const L = [['matchId', 'tournament', 'started', 'round', 'time', 'player1', 'player2', 'winner', 'sets', 'p1_serve_pts_won', 'p1_serve_pts', 'p2_serve_pts_won', 'p2_serve_pts', 'p1_holds', 'p1_service_games', 'p2_holds', 'p2_service_games'].join(',')];
   St.matches.forEach(m => L.push([m.matchId, cname(m.comp), m.tour, PHASE[m.phase], m.time, pn(m.p1), pn(m.p2), pn(m.w), m.sets.map(s => s.join('-')).join(' '), ...(m.serve ? [m.serve[0][0], m.serve[0][1], m.serve[1][0], m.serve[1][1], m.holds[0][0], m.holds[0][1], m.holds[1][0], m.holds[1][1]] : ['', '', '', '', '', '', '', ''])].map(q).join(',')));
   download(`zoom-tennis-matches-${new Date().toISOString().slice(0, 10)}.csv`, L.join('\n'), 'text/csv');
 }
-async function importJSON(e) { const f = e.target.files[0]; if (!f) return; try { const d = JSON.parse(await f.text()); await TDB.putMany('matches', d.matches || []); await TDB.putMany('meta', d.meta || []); await TDB.putMany('live', d.live || []); await load(); render(); alert(`Imported ${(d.matches || []).length} matches.`); } catch (err) { alert('Import failed: ' + err.message); } }
+async function importJSON(e) { const f = e.target.files[0]; if (!f) return; try { const d = JSON.parse(await f.text()); if (d.engine && d.engine !== 'tennis') throw new Error('this file is a ' + d.engine + ' export, not tennis'); await TDB.putMany('matches', d.matches || []); await TDB.putMany('meta', d.meta || []); await TDB.putMany('live', d.live || []); await load(); render(); alert(`Imported ${(d.matches || []).length.toLocaleString()} matches. Matches you already had are not duplicated.`); } catch (err) { alert('Import failed: ' + err.message); } }
 async function clearDB() { if (!confirm('Delete ALL captured tennis data from this browser?')) return; for (const s of ['matches', 'meta', 'live']) await TDB.clear(s); await load(); render(); }
 
 (async () => { await load(); render(); setInterval(() => { syncLine(); if (St.tab === 'live' && !liveTimer) renderLive(true); }, 10000); })();
+
+// header Export / Import buttons
+document.getElementById('btnExp').addEventListener('click', async e => { const b = e.currentTarget; b.disabled = true; b.textContent = '⏳ Exporting…'; try { await exportJSON(); } finally { b.disabled = false; b.textContent = '⬇ Export'; } });
+document.getElementById('btnImp').addEventListener('click', () => document.getElementById('impTop').click());
+document.getElementById('impTop').addEventListener('change', async e => { const b = document.getElementById('btnImp'); b.disabled = true; b.textContent = '⏳ Importing…'; try { await importJSON(e); } finally { e.target.value = ''; b.disabled = false; b.textContent = '⬆ Import'; } });

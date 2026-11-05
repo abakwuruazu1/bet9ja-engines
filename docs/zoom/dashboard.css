@@ -67,3 +67,5 @@ tr.click{cursor:pointer} tr.click:hover td{background:var(--panel2)}
 .calib{display:flex;gap:4px;align-items:flex-end;height:140px;border-bottom:1px solid var(--line);padding-top:8px}
 .calib div{flex:1;display:flex;gap:2px;align-items:flex-end;height:100%}
 .calib span{flex:1;border-radius:3px 3px 0 0}
+
+/* actions-gap */.top .actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:flex-end}
